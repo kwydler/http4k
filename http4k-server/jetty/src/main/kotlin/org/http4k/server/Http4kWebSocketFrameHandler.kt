@@ -16,22 +16,37 @@ import org.http4k.websocket.PushPullAdaptingWebSocket
 import org.http4k.websocket.WsConsumer
 import org.http4k.websocket.WsMessage
 import org.http4k.websocket.WsStatus
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 
 class Http4kWebSocketFrameHandler(private val wSocket: WsConsumer,
                                   private val upgradeRequest: Request) : FrameHandler {
 
     private var websocket: PushPullAdaptingWebSocket? = null
-    private val textBuffer = Utf8StringBuilder()
+    private var textSink: MessageSink? = null
+    private var binarySink: MessageSink? = null
+    private var activeSink: MessageSink? = null
 
     override fun onFrame(frame: Frame, callback: Callback) {
         try {
             when (frame.opCode) {
+                TEXT -> {
+                    if (activeSink == null) {
+                        activeSink = textSink
+                    }
+                }
+                BINARY -> {
+                    if (activeSink == null) {
+                        activeSink = binarySink
+                    }
+                }
+            }
+            when (frame.opCode) {
                 TEXT, BINARY, CONTINUATION -> {
-                    textBuffer.append(frame.payload)
+                    activeSink?.accept(frame)
 
                     if (frame.isFin) {
-                        websocket?.triggerMessage(WsMessage(Body(textBuffer.toString())))
-                        textBuffer.reset()
+                        activeSink = null
                     }
                 }
             }
@@ -43,7 +58,7 @@ class Http4kWebSocketFrameHandler(private val wSocket: WsConsumer,
     }
 
     override fun onOpen(session: CoreSession, callback: Callback) {
-        websocket = object : PushPullAdaptingWebSocket(upgradeRequest) {
+        val ws = object : PushPullAdaptingWebSocket(upgradeRequest) {
             override fun send(message: WsMessage) {
                 session.sendFrame(Frame(
                     if (message.body is StreamBody) BINARY else TEXT,
@@ -58,6 +73,11 @@ class Http4kWebSocketFrameHandler(private val wSocket: WsConsumer,
                 })
             }
         }.apply(wSocket)
+
+        websocket = ws
+        textSink = TextMessageSink(ws)
+        binarySink = BinaryMessageSink(ws)
+
         callback.succeeded()
     }
 
@@ -68,5 +88,56 @@ class Http4kWebSocketFrameHandler(private val wSocket: WsConsumer,
 
     override fun onClosed(closeStatus: CloseStatus, callback: Callback) {
         websocket?.triggerClose(WsStatus(closeStatus.code, closeStatus.reason ?: "<unknown>"))
+    }
+}
+
+private interface MessageSink {
+
+    fun accept(frame: Frame)
+}
+
+private class BinaryMessageSink(private val socket: PushPullAdaptingWebSocket) : MessageSink {
+
+    private var out: ByteArrayOutputStream = ByteArrayOutputStream()
+
+    override fun accept(frame: Frame) {
+        try {
+            if (frame.hasPayload()) {
+                val bytes = ByteArray(frame.payload.remaining())
+                frame.payload.get(bytes)
+                out.write(bytes)
+            }
+
+            if (frame.isFin) {
+                val stream = ByteArrayInputStream(out.toByteArray())
+                socket.triggerMessage(WsMessage(Body(stream)))
+            }
+        } finally {
+            if(frame.isFin) {
+                out.reset()
+            }
+        }
+    }
+}
+
+private class TextMessageSink(private val socket: PushPullAdaptingWebSocket) : MessageSink {
+
+    private var out: Utf8StringBuilder = Utf8StringBuilder()
+
+    override fun accept(frame: Frame) {
+        try {
+            if (frame.hasPayload()) {
+                out.append(frame.payload)
+            }
+
+            if(frame.isFin) {
+                val str = out.toString()
+                socket.triggerMessage(WsMessage(Body(str)))
+            }
+        } finally {
+            if(frame.isFin) {
+                out.reset()
+            }
+        }
     }
 }

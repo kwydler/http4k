@@ -1,9 +1,12 @@
 package org.http4k.websocket
 
+import com.natpryce.hamkrest.Matcher
 import com.natpryce.hamkrest.assertion.assertThat
 import com.natpryce.hamkrest.equalTo
+import com.natpryce.hamkrest.isIn
 import com.natpryce.hamkrest.present
 import com.natpryce.hamkrest.throws
+import okio.ByteString.Companion.toByteString
 import org.http4k.client.WebsocketClient
 import org.http4k.core.HttpHandler
 import org.http4k.core.Method.GET
@@ -25,7 +28,10 @@ import org.java_websocket.exceptions.WebsocketNotConnectedException
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.io.ByteArrayInputStream
 import java.time.Duration
+import java.util.Arrays
+import java.util.Random
 import java.util.concurrent.CountDownLatch
 
 abstract class WebsocketServerContract(private val serverConfig: (Int) -> PolyServerConfig, private val client: HttpHandler) {
@@ -61,6 +67,7 @@ abstract class WebsocketServerContract(private val serverConfig: (Int) -> PolySe
             },
             "/echo" bind { ws: Websocket ->
                 ws.onMessage { ws.send(it) }
+                ws.onError { ws.send(WsMessage(it.localizedMessage)) }
             })
 
         server = PolyHandler(routes, ws).asServer(serverConfig(0)).start()
@@ -195,5 +202,18 @@ abstract class WebsocketServerContract(private val serverConfig: (Int) -> PolySe
         client.send(anotherMessage)
 
         assertThat(client.received().take(2).toList(), equalTo(listOf(longMessage, anotherMessage)))
+    }
+
+    @Test
+    fun `can send and receive binary messages from socket`() {
+        val client = WebsocketClient.blocking(Uri.of("ws://localhost:$port/echo"))
+
+        val randomBytes = ByteArray(8)
+        Random().nextBytes(randomBytes)
+
+        val binaryMessage = WsMessage(ByteArrayInputStream(randomBytes))
+        client.send(binaryMessage)
+
+        assertThat(client.received().firstOrNull()?.body?.payload?.array(), randomBytes::contentEquals)
     }
 }
