@@ -4,7 +4,9 @@ import io.pebbletemplates.pebble.PebbleEngine
 import io.pebbletemplates.pebble.error.LoaderException
 import io.pebbletemplates.pebble.loader.ClasspathLoader
 import io.pebbletemplates.pebble.loader.FileLoader
+import io.pebbletemplates.pebble.loader.Loader
 import java.io.File
+import java.io.Reader
 import java.io.StringWriter
 
 class PebbleTemplates(private val configure: (PebbleEngine.Builder) -> PebbleEngine.Builder = { it },
@@ -22,8 +24,20 @@ class PebbleTemplates(private val configure: (PebbleEngine.Builder) -> PebbleEng
 
     override fun CachingClasspath(baseClasspathPackage: String): TemplateRenderer {
         val loader = ClasspathLoader(classLoader)
-        loader.prefix = if (baseClasspathPackage.isEmpty()) null else baseClasspathPackage.replace('.', File.separatorChar)
-        return PebbleTemplateRenderer(configure(PebbleEngine.Builder().loader(loader)).build())
+
+        val wrapper = object : Loader<String> by loader {
+            override fun getReader(cacheKey: String?): Reader {
+                return loader.getReader(cacheKey?.replace(File.separatorChar, '/'))
+            }
+
+            override fun resourceExists(templateName: String?): Boolean {
+                return loader.resourceExists(templateName?.replace(File.separatorChar, '/'))
+            }
+
+
+        }
+        loader.prefix = if (baseClasspathPackage.isEmpty()) null else baseClasspathPackage.replace('.', '/')
+        return PebbleTemplateRenderer(configure(PebbleEngine.Builder().loader(wrapper)).build())
     }
 
     override fun Caching(baseTemplateDir: String): TemplateRenderer {

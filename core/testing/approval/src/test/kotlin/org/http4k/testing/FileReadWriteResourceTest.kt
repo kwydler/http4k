@@ -6,20 +6,25 @@ import com.natpryce.hamkrest.equalTo
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.nio.file.Files
+import java.security.SecureRandom
+import kotlin.io.path.createTempDirectory
 import kotlin.random.Random
 
 class FileReadWriteResourceTest {
 
+    private val random = SecureRandom()
+    private val tempDir = createTempDirectory("http4k-test").toFile()
+
     @Test
     fun `non existent file cannot be read`() {
-        val target = File("/tmp", javaClass.name + Random(1).nextLong().toString())
+        val target = File(tempDir, javaClass.name + random.nextLong().toString())
         assertThat(FileReadWriteResource(target).input(), absent())
         target.delete()
     }
 
     @Test
     fun `non existent file can be written to`() {
-        val target = File("/tmp", javaClass.name + Random(1).nextLong().toString())
+        val target = File(tempDir, javaClass.name + random.nextLong().toString())
         with(FileReadWriteResource(target)) {
             output().writer().use { it.write("goodbye") }
             assertThat(input()!!.reader().use { it.readText() }, equalTo("goodbye"))
@@ -41,7 +46,7 @@ class FileReadWriteResourceTest {
         }
     }
 
-    private fun existingFile(content: String) = Files.createTempFile(javaClass.name, Random(1).nextLong().toString()).toFile().apply {
+    private fun existingFile(content: String) = Files.createTempFile(javaClass.name, ".tmp").toFile().apply {
         writeText(content)
     }
 }

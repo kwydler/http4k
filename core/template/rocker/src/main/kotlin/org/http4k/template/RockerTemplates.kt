@@ -4,12 +4,17 @@ import com.fizzed.rocker.Rocker
 import com.fizzed.rocker.RockerModel
 import com.fizzed.rocker.runtime.DefaultRockerModel
 import com.fizzed.rocker.runtime.RockerRuntime
+import java.io.File
+import java.nio.file.Files
 
 /**
  * Use this class as the extension class for all Template classes in the Rocker generation step
  */
 abstract class RockerViewModel : DefaultRockerModel(), ViewModel {
     override fun template() = super.template() + ".rocker.html"
+
+    // DefaultRockerModel throws an `UnsupportedOperationException` if the `toString()` method is called.
+    override fun toString(): String = javaClass.name
 }
 
 @Suppress("PARAMETER_NAME_CHANGED_ON_OVERRIDE")
@@ -29,7 +34,9 @@ class RockerTemplates : Templates {
         }
 
         override fun invoke(p1: ViewModel) = kotlin.runCatching {
-            Rocker.template(p1.template())
+            // Rocker expects the template path to use `/` even on Windows.
+            // https://github.com/fizzed/rocker/blob/master/rocker-runtime/src/main/java/com/fizzed/rocker/runtime/DefaultRockerBootstrap.java#L75
+            Rocker.template(p1.template().replace(File.separatorChar, '/'))
         }.onFailure { throw ViewNotFound(p1) }
             .map {
                 it

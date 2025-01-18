@@ -146,7 +146,7 @@ class ProfileCredentialsProviderTest {
     @Test
     fun `CredentialsProvider provides default credentials from custom file`() {
         assertThat(
-            CredentialsProvider.Profile(credentialsPath = credentialsFile).invoke(),
+            CredentialsProvider.Profile(profileName = ProfileName.of("default"), credentialsPath = credentialsFile).invoke(),
             equalTo(AwsCredentials("key123", "secret123"))
         )
     }

@@ -10,6 +10,7 @@ import org.http4k.hamkrest.hasBody
 import org.http4k.hamkrest.hasContentType
 import org.http4k.hamkrest.hasStatus
 import org.junit.jupiter.api.Test
+import kotlin.io.path.Path
 
 object TestViewModel : ViewModel
 
@@ -20,7 +21,7 @@ class TemplateRendererTest {
 
     @Test
     fun `can compose template renderers`() {
-        assertThat(noFinds.then(finds)(TestViewModel), equalTo("org/http4k/template/TestViewModel"))
+        assertThat(noFinds.then(finds)(TestViewModel), equalTo(Path("org/http4k/template/TestViewModel").toString()))
     }
 
     @Test
@@ -30,6 +31,6 @@ class TemplateRendererTest {
 
     @Test
     fun `can generate response with default code and content type`() {
-        assertThat(finds.renderToResponse(TestViewModel), hasStatus(OK).and(hasBody("org/http4k/template/TestViewModel")).and(hasContentType(TEXT_HTML)))
+        assertThat(finds.renderToResponse(TestViewModel), hasStatus(OK).and(hasBody(Path("org/http4k/template/TestViewModel").toString())).and(hasContentType(TEXT_HTML)))
     }
 }

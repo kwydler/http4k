@@ -11,7 +11,7 @@ class FileSystemApprovalSourceTest {
 
     @Test
     fun `filenames are as expected`() {
-        assertThat(fs.approvedFor("hello").toString(), endsWith("/hello.approved"))
-        assertThat(fs.actualFor("hello").toString(), endsWith("/hello.actual"))
+        assertThat(fs.approvedFor("hello").toString(), endsWith("hello.approved"))
+        assertThat(fs.actualFor("hello").toString(), endsWith("hello.actual"))
     }
 }

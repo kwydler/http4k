@@ -11,9 +11,11 @@ import org.http4k.core.with
 import org.http4k.lens.BiDiLensContract.checkContract
 import org.http4k.lens.BiDiLensContract.spec
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
 import java.math.BigDecimal
 import java.math.BigInteger
 
+@ExtendWith(SetLineSeparatorExtension::class)
 abstract class JsonContract<NODE>(open val j: Json<NODE>) {
 
     abstract val prettyString: String
