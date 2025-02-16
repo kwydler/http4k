@@ -12,6 +12,7 @@ import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.Uri
 import org.http4k.core.with
+import org.http4k.events.ProtocolStatus
 import org.http4k.format.KotlinxSerialization.auto
 import org.http4k.lens.StringBiDiMappings
 import org.junit.jupiter.api.Disabled
@@ -85,6 +86,9 @@ data class InOnlyHolder(@Contextual val value: InOnly)
 data class HolderHolder(@Contextual val value: MappedBigDecimalHolder)
 
 data class MappedBigDecimalHolder(val value: BigDecimal)
+
+@Serializable
+data class ProtocolStatusHolder(@Contextual val value: ProtocolStatus)
 
 @Serializable
 sealed class PolymorphicParent
@@ -174,6 +178,13 @@ class KotlinxSerializationAutoTest : AutoMarshallingJsonContract(KotlinxSerializ
 
     @Disabled()
     override fun `roundtrip custom value`() {
+    }
+
+    @Test
+    override fun `serialize protocol status`() {
+        val obj = ProtocolStatusHolder(Status.OK)
+        val out = KotlinxSerialization.asFormatString(obj)
+        assertThat(out.normaliseJson(), equalTo(expectedAutoMarshallingProtocolStatus.normaliseJson()))
     }
 
     @Test

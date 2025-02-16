@@ -115,6 +115,7 @@ uuid: "1a448854-1687-4f90-9562-7d527d64383c"
 uri: "http://uri:8000"
 url: "http://url:9000"
 status: 200
+wsStatus: 1000
 """
     override val expectedWrappedMap: String = """value:
   key: "value"
@@ -156,6 +157,9 @@ bool: true
 """
 
     override val expectedAutoMarshallingZonesAndLocale = "zoneId:\"America/Toronto\"\nzoneOffset:\"-04:00\"\nlocale:\"en-CA\"\n"
+
+    override val expectedAutoMarshallingProtocolStatus = """value: 200
+"""
 
     @Test
     override fun `automarshalling failure has expected message`() {

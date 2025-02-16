@@ -22,6 +22,7 @@ import org.http4k.core.Request
 import org.http4k.core.Response
 import org.http4k.core.Status
 import org.http4k.core.with
+import org.http4k.events.ProtocolStatus
 import org.http4k.hamkrest.hasContentType
 import org.http4k.lens.BiDiMapping
 import org.http4k.lens.StringBiDiMappings
@@ -42,6 +43,7 @@ import org.http4k.lens.StringBiDiMappings.uuid
 import org.http4k.lens.StringBiDiMappings.zoneId
 import org.http4k.lens.StringBiDiMappings.zoneOffset
 import org.http4k.lens.StringBiDiMappings.zonedDateTime
+import org.http4k.websocket.WsStatus
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
 
@@ -54,6 +56,7 @@ class KondorJsonAutoMarshallingJsonTest : AutoMarshallingJsonContract(
         register(JRegexHolder)
         register(JZonesAndLocale)
         register(JExceptionHolder)
+        register(JProtocolStatusHolder)
         register(throwable().asJConverter())
         register(JMap(JString))
     }
@@ -277,6 +280,7 @@ private object JCommonJdkPrimitives : JAny<CommonJdkPrimitives>() {
     val uri by str(uri().asJConverter(), CommonJdkPrimitives::uri)
     val url by str(url().asJConverter(), CommonJdkPrimitives::url)
     val status by JField(CommonJdkPrimitives::status, BiDiMapping({ Status(it, "") }, Status::code).asJConverter(JInt))
+    val wsStatus by JField(CommonJdkPrimitives::wsStatus, BiDiMapping({ WsStatus(it, "") }, WsStatus::code).asJConverter(JInt))
 
     override fun JsonNodeObject.deserializeOrThrow() =
         CommonJdkPrimitives(
@@ -292,7 +296,8 @@ private object JCommonJdkPrimitives : JAny<CommonJdkPrimitives>() {
             uuid = +uuid,
             uri = +uri,
             url = +url,
-            status = +status
+            status = +status,
+            wsStatus = + wsStatus
         )
 }
 
@@ -317,6 +322,12 @@ private object JZonesAndLocale : JAny<ZonesAndLocale>() {
 
 private object JExceptionHolder : JAny<ExceptionHolder>() {
     val value by str(throwable().asJConverter(), ExceptionHolder::value)
+
+    override fun JsonNodeObject.deserializeOrThrow() = null
+}
+
+private object JProtocolStatusHolder : JAny<ProtocolStatusHolder>() {
+    val value by JField(ProtocolStatusHolder::value, BiDiMapping({ throw UnsupportedOperationException() }, ProtocolStatus::code).asJConverter(JInt))
 
     override fun JsonNodeObject.deserializeOrThrow() = null
 }

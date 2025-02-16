@@ -32,7 +32,8 @@ class MoshiYamlAutoTest : AutoMarshallingContract(MoshiYaml) {
         "uuid:1a448854-1687-4f90-9562-7d527d64383c\n" +
         "uri:http://uri:8000\n" +
         "url:http://url:9000\n" +
-        "status:200.0\n"
+        "status:200.0\n" +
+        "wsStatus:1000.0\n"
 
     override val expectedWrappedMap: String = "value:\n" +
         "  key:value\n" +
@@ -72,6 +73,9 @@ bool:true
 """
 
     override val expectedAutoMarshallingZonesAndLocale = "zoneId:America/Toronto\nzoneOffset:-04:00\nlocale:en-CA\n"
+
+    override val expectedAutoMarshallingProtocolStatus = """value:200.0
+"""
 
     override fun strictMarshaller() = object : ConfigurableMoshiYaml(
         Builder().asConfigurable().customise(), strictness = FailOnUnknown

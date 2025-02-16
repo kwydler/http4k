@@ -2,6 +2,7 @@ package org.http4k.format
 
 import org.http4k.core.Status
 import org.http4k.core.Uri
+import org.http4k.events.ProtocolStatus
 import org.http4k.lens.BiDiMapping
 import org.http4k.lens.StringBiDiMappings.duration
 import org.http4k.lens.StringBiDiMappings.eventCategory
@@ -24,6 +25,7 @@ import org.http4k.lens.StringBiDiMappings.yearMonth
 import org.http4k.lens.StringBiDiMappings.zoneId
 import org.http4k.lens.StringBiDiMappings.zoneOffset
 import org.http4k.lens.StringBiDiMappings.zonedDateTime
+import org.http4k.websocket.WsStatus
 import java.math.BigDecimal
 import java.math.BigInteger
 import java.time.Duration
@@ -90,6 +92,8 @@ fun <T> AutoMappingConfiguration<T>.withStandardMappings() = apply {
     text(throwable())
     text(locale())
     int({ Status(it, "") }, Status::code)
+    int({ WsStatus(it, "") }, WsStatus::code)
+    int<T, ProtocolStatus>({ throw UnsupportedOperationException() }, ProtocolStatus::code)
 }
 
 /**

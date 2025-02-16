@@ -13,9 +13,11 @@ import org.http4k.core.Request
 import org.http4k.core.Status
 import org.http4k.core.Uri
 import org.http4k.core.with
+import org.http4k.events.ProtocolStatus
 import org.http4k.lens.Query
 import org.http4k.lens.StringBiDiMappings
 import org.http4k.lens.string
+import org.http4k.websocket.WsStatus
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
 import java.math.BigInteger
@@ -48,7 +50,8 @@ data class CommonJdkPrimitives(
     val uuid: UUID,
     val uri: Uri,
     val url: URL,
-    val status: Status
+    val status: Status,
+    val wsStatus: WsStatus,
 )
 
 enum class StandardEnum {
@@ -84,6 +87,7 @@ class CustomException(m: String) : RuntimeException(m)
 data class ZonesAndLocale(val zoneId: ZoneId, val zoneOffset: ZoneOffset, val locale: Locale)
 data class GenericMapHolder(val value: Map<Any, Any>)
 data class SpecificMapHolder(val value: Map<AnEnum, MyValue>)
+data class ProtocolStatusHolder(val value: ProtocolStatus)
 
 class MyValue(value: String) : StringValue(value) {
     companion object : StringValueFactory<MyValue>(::MyValue)
@@ -115,6 +119,7 @@ abstract class AutoMarshallingContract(private val marshaller: AutoMarshalling) 
     protected abstract val inputEmptyObject: String
     protected abstract val expectedRegexSpecial: String
     protected abstract val expectedAutoMarshallingZonesAndLocale: String
+    protected abstract val expectedAutoMarshallingProtocolStatus: String
 
     val obj = ArbObject("hello", ArbObject("world", null, listOf(1), true), emptyList(), false)
 
@@ -159,7 +164,8 @@ abstract class AutoMarshallingContract(private val marshaller: AutoMarshalling) 
             UUID.fromString("1a448854-1687-4f90-9562-7d527d64383c"),
             Uri.of("http://uri:8000"),
             URI("http://url:9000").toURL(),
-            Status.OK
+            Status.OK,
+            WsStatus.NORMAL,
         )
         val out = marshaller.asFormatString(obj)
         assertThat(out.normaliseJson(), equalTo(expectedAutoMarshallingResultPrimitives.normaliseJson()))
@@ -277,6 +283,12 @@ abstract class AutoMarshallingContract(private val marshaller: AutoMarshalling) 
         val wrapper = BooleanHolder(true)
         assertThat(marshaller.asFormatString(wrapper), equalTo("true"))
         assertThat(marshaller.asA("true", BooleanHolder::class), equalTo(wrapper))
+    }
+
+    @Test
+    open fun `serialize protocol status`() {
+        val out = marshaller.asFormatString(ProtocolStatusHolder(Status.OK))
+        assertThat(out.normaliseJson(), equalTo(expectedAutoMarshallingProtocolStatus.normaliseJson()))
     }
 
     @Test

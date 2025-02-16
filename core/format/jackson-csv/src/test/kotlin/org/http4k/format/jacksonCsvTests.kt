@@ -11,6 +11,7 @@ import org.http4k.core.Status.Companion.OK
 import org.http4k.core.Uri
 import org.http4k.core.with
 import org.http4k.format.JacksonCsv.auto
+import org.http4k.websocket.WsStatus
 import org.junit.jupiter.api.Test
 import java.net.URI
 import java.time.Duration
@@ -102,12 +103,13 @@ class JacksonCsvBodyTest {
             UUID.fromString("1a448854-1687-4f90-9562-7d527d64383c"),
             Uri.of("http://uri:8000"),
             URI.create("http://url:9000").toURL(),
-            OK
+            OK,
+            WsStatus.NORMAL
         )
 
         val csv =
-            """duration,instant,localDate,localDateTime,localTime,offsetDateTime,offsetTime,period,status,uri,url,uuid,zonedDateTime
-PT1S,1970-01-01T00:00:00Z,2000-01-01,2000-01-01T01:01:01,01:01:01,2000-01-01T01:01:01Z,01:01:01Z,P1Y2M3D,200,http://uri:8000,http://url:9000,"1a448854-1687-4f90-9562-7d527d64383c","2000-01-01T01:01:01Z[UTC]"
+            """duration,instant,localDate,localDateTime,localTime,offsetDateTime,offsetTime,period,status,uri,url,uuid,wsStatus,zonedDateTime
+PT1S,1970-01-01T00:00:00Z,2000-01-01,2000-01-01T01:01:01,01:01:01,2000-01-01T01:01:01Z,01:01:01Z,P1Y2M3D,200,http://uri:8000,http://url:9000,"1a448854-1687-4f90-9562-7d527d64383c",1000,"2000-01-01T01:01:01Z[UTC]"
 """
 
         val lens = Body.auto<CommonJdkPrimitives>().toLens()
